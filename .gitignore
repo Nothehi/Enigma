@@ -1,6 +1,7 @@
 # Build output
 bin/
 obj/
+build/
 
 # Premake-generated build files (regenerate with `premake5 gmake2`)
 Makefile

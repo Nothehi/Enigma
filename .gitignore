@@ -1,0 +1,26 @@
+# Build output
+bin/
+obj/
+
+# Premake-generated build files (regenerate with `premake5 gmake2`)
+Makefile
+*.make
+
+# Compiled objects and dependency files
+*.o
+*.obj
+*.d
+*.a
+*.so
+*.out
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*~
+compile_commands.json
+.cache/
+
+# Tooling
+graphify-out/

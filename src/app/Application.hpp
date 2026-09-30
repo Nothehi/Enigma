@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Terminal.hpp"
+#include "app/Terminal.hpp"
 
 #include <functional>
 #include <string>

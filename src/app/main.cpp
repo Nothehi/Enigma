@@ -1,7 +1,7 @@
-#include "Application.hpp"
-#include "Enigma.hpp"
-#include "Signals.hpp"
-#include "Terminal.hpp"
+#include "app/Application.hpp"
+#include "app/Signals.hpp"
+#include "app/Terminal.hpp"
+#include "core/Enigma.hpp"
 
 #include <cstdlib>
 #include <exception>

@@ -1,4 +1,4 @@
-#include "Enigma.hpp"
+#include "core/Enigma.hpp"
 
 char Enigma::press(char /*plain*/)
 {

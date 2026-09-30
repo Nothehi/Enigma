@@ -1,4 +1,4 @@
-#include "Terminal.hpp"
+#include "app/Terminal.hpp"
 
 #include <cerrno>
 #include <format>

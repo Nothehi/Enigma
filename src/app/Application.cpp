@@ -1,6 +1,6 @@
-#include "Application.hpp"
+#include "app/Application.hpp"
 
-#include "Signals.hpp"
+#include "app/Signals.hpp"
 
 #include <format>
 #include <iterator>

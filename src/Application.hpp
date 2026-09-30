@@ -6,6 +6,7 @@
 #include <chrono>
 #include <thread>
 #include <array>
+#include <functional>
 #include <Terminal.hpp>
 
 class Application
@@ -57,7 +58,7 @@ public:
         render();
     }
 
-    void run(std::string (*callback)())
+    void run(const std::function<std::string()>& callback)
     {
         int outputLinesCount = 0;
 

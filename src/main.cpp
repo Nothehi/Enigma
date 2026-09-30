@@ -1,14 +1,32 @@
-#include <Application.hpp>
-#include <Enigma.hpp>
+#include "Application.hpp"
+#include "Enigma.hpp"
+#include "Signals.hpp"
+#include "Terminal.hpp"
+
+#include <cstdlib>
+#include <exception>
 #include <iostream>
+#include <string_view>
 
-int main(void)
+int main()
 {
-    Application app;
-    Enigma enigma;
+    try
+    {
+        signals::installStopHandlers();
 
-    app.run([&enigma]
-            { return enigma.listen(); });
+        Enigma enigma;
+        {
+            Terminal terminal;
+            Application app(terminal, [&enigma](std::string_view line) { return enigma.encrypt(line); });
+            app.run();
+        } // Terminal restored here, before anything is printed to the normal screen.
 
-    return 0;
+        std::cout << "Shutdown complete.\n";
+        return EXIT_SUCCESS;
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "enigma: " << e.what() << '\n';
+        return EXIT_FAILURE;
+    }
 }

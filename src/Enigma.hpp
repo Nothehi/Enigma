@@ -1,25 +1,14 @@
 #pragma once
 
-#include <iostream>
+#include <string>
+#include <string_view>
 
+// The cipher machine. Pure logic with no I/O, so it can be unit-tested in isolation.
 class Enigma
 {
-    char m_plainCharacter;
-    std::string m_encryptedText;
-
 public:
-    std::string listen()
-    {
-        m_encryptedText.clear();
+    // Encrypts a single keypress. Non-const because a real machine steps its rotors on every press.
+    [[nodiscard]] char press(char plain);
 
-        while (std::cin.get(m_plainCharacter))
-        {
-            if (m_plainCharacter == '\n')
-                break;
-
-            m_encryptedText.push_back('a');
-        }
-
-        return m_encryptedText;
-    }
+    [[nodiscard]] std::string encrypt(std::string_view plain);
 };

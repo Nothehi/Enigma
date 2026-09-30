@@ -1,95 +1,58 @@
 #pragma once
 
-#include <iostream>
-#include <csignal>
-#include <atomic>
-#include <chrono>
-#include <thread>
-#include <array>
-#include <functional>
-#include <Terminal.hpp>
+#include "Terminal.hpp"
 
+#include <functional>
+#include <string>
+#include <string_view>
+
+// Line-based terminal UI: a scrolling output area above a single-line prompt.
+// Each submitted line is passed through the transform and the result is appended to the output.
 class Application
 {
-    static inline std::atomic<bool> s_running{true};
-
-    static inline Terminal terminal;
-
-    static void handleSignal(int signal)
-    {
-        if (signal == SIGINT || signal == SIGTERM)
-            s_running = false;
-    }
-
-    void render()
-    {
-        terminal.scrollRegion(outputRegion()[0], outputRegion()[1]);
-        terminal.moveCursor(terminal.getRows() - 3, 0);
-        terminal.printSeparator();
-        terminal.moveCursor(inputRegion()[0], 0);
-        terminal.print("❯ ");
-        terminal.printLine("Enter message: ", 50, 50, 50);
-        terminal.printSeparator();
-        terminal.moveCursor(inputRegion()[0], inputRegion()[1]);
-    }
-
-    std::array<int, 2> outputRegion()
-    {
-        return {1, terminal.getRows() - 4};
-    }
-
-    std::array<int, 2> inputRegion()
-    {
-        return {terminal.getRows() - 2, 18};
-    }
-
-    bool isInsideOutputRegion(uint row)
-    {
-        return row >= outputRegion()[0] && row <= outputRegion()[1];
-    }
-
 public:
-    Application()
+    using Transform = std::function<std::string(std::string_view)>;
+
+    Application(Terminal& terminal, Transform transform);
+
+    // Runs until the user quits (Ctrl+C, or Ctrl+D on an empty line), input ends, or a stop signal arrives.
+    void run();
+
+private:
+    enum class KeyAction
     {
-        std::signal(SIGINT, handleSignal);
-        std::signal(SIGTERM, handleSignal);
+        Continue,
+        Quit
+    };
 
-        terminal.enterAltScreen();
-        render();
-    }
-
-    void run(const std::function<std::string()>& callback)
+    // All rows and columns are 1-based.
+    struct Layout
     {
-        int outputLinesCount = 0;
+        int width;
+        int outputTop;
+        int outputBottom;
+        int topSeparatorRow;
+        int inputRow;
+        int bottomSeparatorRow;
+        int inputCol;
+        int inputCapacity; // characters that fit on the input line without wrapping
+    };
 
-        while (s_running)
-        {
-            terminal.clear(inputRegion()[0], inputRegion()[1], terminal.getCols() - inputRegion()[1]);
-            terminal.moveCursor(inputRegion()[0], inputRegion()[1]);
+    [[nodiscard]] static Layout computeLayout(TerminalSize size);
 
-            std::string output = callback();
+    [[nodiscard]] KeyAction handleKey(char key);
+    void skipEscapeSequence();
+    void submitLine();
+    void appendOutput(std::string_view text);
+    void appendOutputLine(std::string_view line);
 
-            outputLinesCount++;
-            if (isInsideOutputRegion(outputLinesCount))
-                terminal.moveCursor(outputLinesCount, 0);
-            else
-            {
-                terminal.moveCursor(outputRegion()[1], 0);
-                terminal.print("\n");
-            }
+    void drawChrome();
+    void drawSeparator(int row);
+    void drawInput();
 
-            terminal.print(output);
-        }
-    }
-
-    ~Application()
-    {
-        terminal.printLine("Shutting down gracefully...");
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        terminal.exitAltScreen();
-
-        terminal.printLine("Shutdown complete.");
-        std::_Exit(0);
-    }
+    Terminal& m_terminal;
+    Transform m_transform;
+    Layout m_layout;
+    std::string m_input;
+    int m_nextOutputRow;
 };

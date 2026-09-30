@@ -1,74 +1,56 @@
 #pragma once
 
-#include <iostream>
-#include <sys/ioctl.h>
+#include <cstdint>
+#include <optional>
+#include <string>
+#include <string_view>
 
+#include <termios.h>
+
+struct TerminalSize
+{
+    int rows;
+    int cols;
+};
+
+struct Rgb
+{
+    std::uint8_t r;
+    std::uint8_t g;
+    std::uint8_t b;
+};
+
+// RAII owner of the controlling terminal: switches to raw mode and the alternate
+// screen on construction and restores both on destruction.
+// Output is buffered; nothing reaches the screen until flush().
 class Terminal
 {
-    static inline winsize s_winsize{};
-
 public:
-    Terminal()
-    {
-        ioctl(STDOUT_FILENO, TIOCGWINSZ, &s_winsize);
-    }
+    Terminal();
+    ~Terminal();
 
-    inline unsigned short int getRows() const
-    {
-        return s_winsize.ws_row;
-    }
+    Terminal(const Terminal&) = delete;
+    Terminal& operator=(const Terminal&) = delete;
+    Terminal(Terminal&&) = delete;
+    Terminal& operator=(Terminal&&) = delete;
 
-    inline unsigned short int getCols() const
-    {
-        return s_winsize.ws_col;
-    }
+    [[nodiscard]] TerminalSize size() const noexcept { return m_size; }
 
-    inline void moveCursor(uint row, uint col)
-    {
-        std::cout << "\033[" << row << ";" << col << "H";
-    }
+    // Coordinates are 1-based, as in ANSI escape sequences.
+    void moveCursor(int row, int col);
+    void setScrollRegion(int top, int bottom);
+    void clearToEndOfLine();
+    void setForeground(Rgb color);
+    void resetStyle();
+    void write(std::string_view text);
+    void flush() noexcept;
 
-    inline void enterAltScreen()
-    {
-        std::cout << "\033[?1049h\033[2J";
-    }
+    // Blocks until one byte of input arrives. Returns nullopt on end of input,
+    // on error, or when a signal interrupts the read.
+    [[nodiscard]] std::optional<char> readByte();
 
-    inline void exitAltScreen()
-    {
-        std::cout << "\033[r\033[?1049l" << std::flush;
-    }
-
-    inline void scrollRegion(uint from, uint to)
-    {
-        std::cout << "\033[" << from << ";" << to << "r";
-    }
-
-    inline void clear(uint from, uint to, uint offset)
-    {
-        moveCursor(from, to);
-        for (int i = 0; i < offset; ++i)
-            std::cout << " ";
-    }
-
-    inline void print(std::string str)
-    {
-        std::cout << str;
-    }
-
-    inline void printLine(std::string str)
-    {
-        std::cout << str << std::endl;
-    }
-
-    inline void printLine(std::string str, uint r, uint g, uint b)
-    {
-        std::cout << "\033[38;2;" << r << ";" << g << ";" << b << "m" << str << "\033[0m" << std::endl;
-    }
-
-    inline void printSeparator(std::string separator = "─")
-    {
-        for (int i = 0; i < getCols(); ++i)
-            std::cout << separator;
-        std::cout << std::endl;
-    }
+private:
+    termios m_originalMode{};
+    TerminalSize m_size{};
+    std::string m_buffer;
 };
